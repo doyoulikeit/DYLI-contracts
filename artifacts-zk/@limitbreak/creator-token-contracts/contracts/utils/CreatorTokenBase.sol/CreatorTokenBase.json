@@ -1,0 +1,292 @@
+{
+  "_format": "hh-zksolc-artifact-1",
+  "contractName": "CreatorTokenBase",
+  "sourceName": "@limitbreak/creator-token-contracts/contracts/utils/CreatorTokenBase.sol",
+  "abi": [
+    {
+      "inputs": [],
+      "name": "CreatorTokenBase__InvalidTransferValidatorContract",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CreatorTokenBase__SetTransferValidatorFirst",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ShouldNotMintToBurnAddress",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "oldValidator",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "newValidator",
+          "type": "address"
+        }
+      ],
+      "name": "TransferValidatorUpdated",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_OPERATOR_WHITELIST_ID",
+      "outputs": [
+        {
+          "internalType": "uint120",
+          "name": "",
+          "type": "uint120"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_TRANSFER_SECURITY_LEVEL",
+      "outputs": [
+        {
+          "internalType": "enum TransferSecurityLevels",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_TRANSFER_VALIDATOR",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getPermittedContractReceivers",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getSecurityPolicy",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "enum TransferSecurityLevels",
+              "name": "transferSecurityLevel",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint120",
+              "name": "operatorWhitelistId",
+              "type": "uint120"
+            },
+            {
+              "internalType": "uint120",
+              "name": "permittedContractReceiversId",
+              "type": "uint120"
+            }
+          ],
+          "internalType": "struct CollectionSecurityPolicy",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getTransferValidator",
+      "outputs": [
+        {
+          "internalType": "contract ICreatorTokenTransferValidator",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getWhitelistedOperators",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        }
+      ],
+      "name": "isContractReceiverPermitted",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "operator",
+          "type": "address"
+        }
+      ],
+      "name": "isOperatorWhitelisted",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "from",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "isTransferAllowed",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum TransferSecurityLevels",
+          "name": "level",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint120",
+          "name": "operatorWhitelistId",
+          "type": "uint120"
+        },
+        {
+          "internalType": "uint120",
+          "name": "permittedContractReceiversAllowlistId",
+          "type": "uint120"
+        }
+      ],
+      "name": "setToCustomSecurityPolicy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "validator",
+          "type": "address"
+        },
+        {
+          "internalType": "enum TransferSecurityLevels",
+          "name": "level",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint120",
+          "name": "operatorWhitelistId",
+          "type": "uint120"
+        },
+        {
+          "internalType": "uint120",
+          "name": "permittedContractReceiversAllowlistId",
+          "type": "uint120"
+        }
+      ],
+      "name": "setToCustomValidatorAndSecurityPolicy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "setToDefaultSecurityPolicy",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "transferValidator_",
+          "type": "address"
+        }
+      ],
+      "name": "setTransferValidator",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "linkReferences": {},
+  "deployedLinkReferences": {},
+  "factoryDeps": {}
+}

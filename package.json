@@ -1,0 +1,21 @@
+{
+  "name": "dyli-abstract-contracts",
+  "version": "1.0.0",
+  "description": "testing",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@matterlabs/hardhat-zksync": "^1.1.0",
+    "@matterlabs/hardhat-zksync-verify": "^1.6.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.8"
+  },
+  "dependencies": {
+    "@limitbreak/creator-token-contracts": "^1.1.2",
+    "@openzeppelin/contracts": "^4.8.1"
+  }
+}

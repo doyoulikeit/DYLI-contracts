@@ -24,8 +24,11 @@ contract dyli_new is ERC1155, Ownable {
     event TokenRefunded(uint256 tokenId, address minter, uint256 price);
     event TokenRedeemed(uint256 tokenId, address redeemer);
 
+<<<<<<< HEAD
     mapping(address => bool) public admin;
 
+=======
+>>>>>>> a9cec7a29fb89b8f43e5a050ab089d1b3ba2be19
     mapping(uint256 => TokenData) public tokenData;
     mapping(uint256 => bool) private tokenDisabled;
 
@@ -286,4 +289,16 @@ contract dyli_new is ERC1155, Ownable {
         super.safeTransferFrom(from, to, id, amount, data);
     }
 
+}
+    function supportsInterface(
+        bytes4 interfaceId
+    )
+        public
+        view
+        virtual
+        override(ERC1155C, ERC2981, AccessControl)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 }

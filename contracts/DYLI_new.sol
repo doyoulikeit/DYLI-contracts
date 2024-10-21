@@ -286,4 +286,32 @@ contract dyli_new is ERC1155, Ownable {
         super.safeTransferFrom(from, to, id, amount, data);
     }
 
+    function ownerCreateDrop(
+        uint256 maxMint,
+        uint256 price,
+        bool _isOE,
+        uint256 startTimestamp,
+        uint256 endTimestamp,
+        uint256 minMint
+    ) public onlyOwner returns (uint256) {
+        return _createDrop(msg.sender, maxMint, price, _isOE, startTimestamp, endTimestamp, minMint);
+    }
+
+    function ownerMintToken(
+        uint256 tokenId,
+        address recipient,
+        uint256 amount
+    ) public onlyOwner {
+        TokenData memory data = tokenData[tokenId];
+        require(!tokenDisabled[tokenId], "Token minting is disabled");
+
+        if (!data.isOE) {
+            require(totalMinted[tokenId] + amount <= data.maxMint, "Exceeds maximum quantity");
+        }
+
+        _mint(recipient, tokenId, amount, "");
+        totalMinted[tokenId] += amount;
+        emit TokenMinted(tokenId, recipient, data.price, fee);
+    }
+
 }

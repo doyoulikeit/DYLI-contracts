@@ -28,7 +28,7 @@ contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
     event TokenRefunded(uint256 tokenId, address minter, uint256 price);
     event TokenRedeemed(uint256 tokenId, address redeemer);
 
-    mapping(uint256 => TokenData) private tokenData;
+    mapping(uint256 => TokenData) public tokenData;
     mapping(uint256 => bool) private tokenDisabled;
 
     mapping(uint256 => uint256) public totalMinted;

@@ -2,19 +2,15 @@
 pragma solidity ^0.8.0;
 
 
-import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC1155C, ERC1155OpenZeppelin} from "@limitbreak/creator-token-contracts/contracts/erc1155c/ERC1155C.sol";
-import {ERC2981, BasicRoyalties} from "@limitbreak/creator-token-contracts/contracts/programmable-royalties/BasicRoyalties.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "hardhat/console.sol";
 
-contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
-    bytes32 public constant MODERATOR_ROLE = keccak256("MODERATOR_ROLE");
+contract dyli_new is ERC1155, Ownable {
 
-    IERC20 public usdc = IERC20(0x4374e4a2638B9bbdeF944465B4acd86999530954);
+    IERC20 public usdc = IERC20(0x75Bf8F439d205B8eE0DE9d3622342eb05985859B);
 
     event DropCreated(uint256 tokenId, address creator, uint256 price);
 
@@ -28,7 +24,9 @@ contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
     event TokenRefunded(uint256 tokenId, address minter, uint256 price);
     event TokenRedeemed(uint256 tokenId, address redeemer);
 
-    mapping(uint256 => TokenData) private tokenData;
+    mapping(address => bool) public admin;
+
+    mapping(uint256 => TokenData) public tokenData;
     mapping(uint256 => bool) private tokenDisabled;
 
     mapping(uint256 => uint256) public totalMinted;
@@ -41,14 +39,21 @@ contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
     uint256 public currentTokenId = 0;
 
     address feeRecipient = 0x2f2A13462f6d4aF64954ee84641D265932849b64;
-    address public SIGNER = 0x2f2A13462f6d4aF64954ee84641D265932849b64;
+    address public signer = 0x2f2A13462f6d4aF64954ee84641D265932849b64;
     uint256 public fee = 2000000;
     uint256 public createFee = 3000000;
+
+    address public marketplace;
 
     modifier checkNonce(address user, uint256 nonce) {
         require(!nonceUsed[user][nonce], "Invalid nonce");
         nonceUsed[user][nonce] = true;
         nonces[user]++;
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(admin[msg.sender] || msg.sender == owner(), "Only admins can call this function");
         _;
     }
 
@@ -63,23 +68,16 @@ contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
     }
 
     constructor(
-        string memory _uri,
-        address royaltyReceiver_,
-        uint96 royaltyFeeNumerator_,
-        address usdc_
+        string memory _uri
     )
-        ERC1155OpenZeppelin(_uri)
-        BasicRoyalties(royaltyReceiver_, royaltyFeeNumerator_)
-    {
-        _grantRole(MODERATOR_ROLE, _msgSender());
-        usdc = IERC20(usdc_);
-    }
+        ERC1155(_uri)
+    {}
 
     function verify(
         bytes32 hash,
         bytes memory signature
     ) internal view returns (bool) {
-        return ECDSA.recover(hash, signature) == SIGNER;
+        return ECDSA.recover(hash, signature) == signer;
     }
 
     function name() external pure returns (string memory) {
@@ -90,29 +88,28 @@ contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
         return "test";
     }
 
-    function setURI(string memory _uri) public onlyRole(MODERATOR_ROLE) {
+    function setURI(string memory _uri) public onlyAdmin {
         _setURI(_uri);
     }
 
-    function setFeeRecipient(address _newFeeRecipient) public onlyRole(MODERATOR_ROLE) {
+    function setFeeRecipient(address _newFeeRecipient) public onlyAdmin {
         feeRecipient = _newFeeRecipient;
     }
 
-    function setFee(uint256 _newFee) public onlyRole(MODERATOR_ROLE) {
+    function setUsdc(address _usdc) public onlyAdmin {
+        usdc = IERC20(_usdc);
+    }
+
+    function setFee(uint256 _newFee) public onlyAdmin {
         fee = _newFee;
     }
 
-    function setCreateFee(uint256 _newCreateFee) public onlyRole(MODERATOR_ROLE) {
+    function setCreateFee(uint256 _newCreateFee) public onlyAdmin {
         createFee = _newCreateFee;
     }
 
-    function setSigner(address _newSigner) public onlyRole(MODERATOR_ROLE) {
-        SIGNER = _newSigner;
-    }
-
-    function setStartingTokenId(uint256 startingTokenId) public onlyRole(MODERATOR_ROLE) {
-        require(currentTokenId == 0, "Starting token ID can only be set once.");
-        currentTokenId = startingTokenId;
+    function setSigner(address _newSigner) public onlyAdmin {
+        signer = _newSigner;
     }
 
     function createDrop(
@@ -260,36 +257,33 @@ contract DYLIC is ERC1155C, AccessControl, BasicRoyalties {
         emit TokenRefunded(tokenId, msg.sender, data.price * amount);
     }
 
+    function disableToken(uint256 tokenId, bool disabled) public onlyAdmin {
+        tokenDisabled[tokenId] = disabled;
+    }
+
     function uri(uint256 tokenId) public view virtual override returns (string memory) {
         return string(abi.encodePacked(super.uri(tokenId), Strings.toString(tokenId)));
     }
 
-
-    function disableToken(uint256 tokenId, bool disabled) public onlyRole(MODERATOR_ROLE) {
-        tokenDisabled[tokenId] = disabled;
+    function withdraw() public onlyOwner {
+        uint256 usdcBalance = usdc.balanceOf(address(this));
+        if (usdcBalance > 0) {
+            require(usdc.transfer(feeRecipient, usdcBalance), "USDC transfer failed");
+        }
     }
 
-    function setDefaultRoyalty(address receiver, uint96 feeNumerator) public onlyRole(MODERATOR_ROLE) {
-        _setDefaultRoyalty(receiver, feeNumerator);
+    function setAdmin(address _admin, bool _isAdmin) public onlyOwner {
+        admin[_admin] = _isAdmin;
     }
 
-    function setTokenRoyalty(uint256 tokenId, address receiver, uint96 feeNumerator) public onlyRole(MODERATOR_ROLE) {
-        _setTokenRoyalty(tokenId, receiver, feeNumerator);
+    function setMarketplace(address _marketplace) public onlyOwner {
+        marketplace = _marketplace;
     }
 
-    function _requireCallerIsContractOwner() internal view virtual override {
-        _checkRole(MODERATOR_ROLE);
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes memory data) public override {
+        require(msg.sender == from || msg.sender == marketplace, "Only token owner or marketplace can transfer");
+
+        super.safeTransferFrom(from, to, id, amount, data);
     }
 
-    function supportsInterface(
-        bytes4 interfaceId
-    )
-        public
-        view
-        virtual
-        override(ERC1155C, ERC2981, AccessControl)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
-    }
 }

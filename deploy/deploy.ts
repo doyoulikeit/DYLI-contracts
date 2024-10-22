@@ -122,6 +122,16 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const contractAddress = await tokenContract.getAddress();
   console.log(`${artifact.contractName} was deployed to ${contractAddress}`);
 
+  try {
+    await hre.run("verify:verify", {
+      address: contractAddress,
+      constructorArguments: [uri],
+    });
+    console.log(`Contract verified at ${contractAddress}`);
+  } catch (error) {
+    console.error(`Verification failed for ${contractAddress}:`, error);
+  }
+
   const walletClient = createWalletClient({
     account,
     chain: abstractTestnet,
@@ -194,7 +204,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const { data: productsDistinct, error: productsError } = await supabase
     .from('products')
     .select('tokenid')
-    
+
   if (productsError) {
     console.error('Error fetching tokenIds:', productsError);
     return;
@@ -273,14 +283,29 @@ export default async function (hre: HardhatRuntimeEnvironment) {
           totalToRefund++;
         }
 
-        totalToMint = Number(totalToRedeem) + Number(totalToRefund);
+        let tokenIdOfProduct;
+
+        const { data: productDetails, error: detailsError } = await supabase
+        .from('products')
+        .select('tokenid')
+        .eq('id', pId)
+        .single();
+
+        if (detailsError) {
+          console.error('Error tokenid:', detailsError);
+          continue;
+        }
+
+        tokenIdOfProduct = productDetails?.tokenid;
+
+        totalToMint = totalToRedeem + totalToRefund;
 
         if (totalToMint > 0) {
           try {
             const mintTx = await sendWithRetry(
               walletClient,
               'ownerMintToken',
-              [pId, user.wallet, totalToMint],
+              [tokenIdOfProduct, user.wallet, totalToMint],
               account,
               contractAddress,
               abi
@@ -291,11 +316,14 @@ export default async function (hre: HardhatRuntimeEnvironment) {
           }
 
           if (totalToRedeem > 0) {
+
+            console.log(totalToRedeem)
+
             try {
               const redeemTx = await sendWithRetry(
                 walletClient,
                 'ownerRedeem',
-                [pId, user.wallet, Number(totalToRedeem)],
+                [tokenIdOfProduct, user.wallet, totalToRedeem],
                 account,
                 contractAddress,
                 abi
@@ -307,11 +335,14 @@ export default async function (hre: HardhatRuntimeEnvironment) {
           }
 
           if (totalToRefund > 0) {
+
+            console.log(totalToRefund)
+
             try {
               const refundTx = await sendWithRetry(
                 walletClient,
                 'ownerRefund',
-                [pId, user.wallet, Number(totalToRefund)],
+                [tokenIdOfProduct, user.wallet, totalToRefund],
                 account,
                 contractAddress,
                 abi

@@ -68,6 +68,28 @@ const abi = [
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "address", "name": "recipient", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "ownerRedeem",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" },
+      { "internalType": "address", "name": "recipient", "type": "address" },
+      { "internalType": "uint256", "name": "amount", "type": "uint256" }
+    ],
+    "name": "ownerRefund",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
   }
 ];
 
@@ -113,7 +135,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const { data: products, error } = await supabase
     .from('products')
     .select('tokenid, price, supply, minimum, created_at, startDate, endDate, dropType')
-    .order('tokenid', { ascending: true })
+    .limit(1)
+    .order('tokenid', { ascending: true });
 
   if (error) {
     console.error('Error fetching products:', error);
@@ -171,7 +194,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const { data: productsDistinct, error: productsError } = await supabase
     .from('products')
     .select('tokenid')
-
+    
   if (productsError) {
     console.error('Error fetching tokenIds:', productsError);
     return;
@@ -181,7 +204,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   const { data: users, error: userError } = await supabase
     .from('user_view')
-    .select('id, wallet');
+    .select('id, wallet, privyId')
+    .not('wallet', 'is', null)
 
   if (userError) {
     console.error('Error fetching users:', userError);
@@ -194,11 +218,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     for (let batchStart = 0; batchStart < tokenIds.length; batchStart += BATCH_SIZE) {
       const batchTokenIds = tokenIds.slice(batchStart, batchStart + BATCH_SIZE);
       const balances = await getBalances(user.wallet, batchTokenIds);
-  
+
       for (let i = 0; i < batchTokenIds.length; i++) {
         const tokenId = batchTokenIds[i];
         const balance = balances[i];
-  
+
         if (balance > 0) {
           try {
             const mintTx = await sendWithRetry(
@@ -214,11 +238,95 @@ export default async function (hre: HardhatRuntimeEnvironment) {
             console.error(`Error minting tokens for user ${user.id} (tokenId ${tokenId}):`, error);
           }
         }
+
+        const { data: redeemedOrders, error: redeemedError } = await supabase
+          .from('orders')
+          .select('id, productId, redeemed')
+          .eq('redeemed', true)
+          .eq('user', user.privyId);
+
+        const { data: refundedOrders, error: refundedError } = await supabase
+          .from('orders')
+          .select('id, productId, refunded')
+          .eq('refunded', true)
+          .eq('user', user.privyId);
+
+        if (redeemedError || refundedError) {
+          console.error('Error fetching orders:', redeemedError || refundedError);
+          continue;
+        }
+
+        let totalToMint = 0;
+        let totalToRedeem = 0;
+        let totalToRefund = 0;
+        let pId;
+
+        for (const order of redeemedOrders) {
+          const { productId } = order;
+          pId = productId;
+          totalToRedeem++;
+        }
+
+        for (const order of refundedOrders) {
+          const { productId } = order;
+          pId = productId;
+          totalToRefund++;
+        }
+
+        totalToMint = Number(totalToRedeem) + Number(totalToRefund);
+
+        if (totalToMint > 0) {
+          try {
+            const mintTx = await sendWithRetry(
+              walletClient,
+              'ownerMintToken',
+              [pId, user.wallet, totalToMint],
+              account,
+              contractAddress,
+              abi
+            );
+            console.log(`Minted ${totalToMint} tokens for user ${user.id}: ${mintTx}`);
+          } catch (error) {
+            console.error(`Error minting tokens for user ${user.id}:`, error);
+          }
+
+          if (totalToRedeem > 0) {
+            try {
+              const redeemTx = await sendWithRetry(
+                walletClient,
+                'ownerRedeem',
+                [pId, user.wallet, Number(totalToRedeem)],
+                account,
+                contractAddress,
+                abi
+              );
+              console.log(`Redeemed ${totalToRedeem} tokens for user ${user.id}: ${redeemTx}`);
+            } catch (error) {
+              console.error(`Error redeeming tokens for user ${user.id}:`, error);
+            }
+          }
+
+          if (totalToRefund > 0) {
+            try {
+              const refundTx = await sendWithRetry(
+                walletClient,
+                'ownerRefund',
+                [pId, user.wallet, Number(totalToRefund)],
+                account,
+                contractAddress,
+                abi
+              );
+              console.log(`Refunded ${totalToRefund} tokens for user ${user.id}: ${refundTx}`);
+            } catch (error) {
+              console.error(`Error refunding tokens for user ${user.id}:`, error);
+            }
+          }
+        }
       }
     }
   }
 
-  console.log('All tokens minted.');
+  console.log('All tokens minted, redeemed, and refunded.');
 }
 
 async function getBalances(walletAddress: string, tokenIds: number[]): Promise<number[]> {

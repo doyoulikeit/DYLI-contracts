@@ -286,6 +286,9 @@ contract DYLI_new is ERC1155, Ownable {
         super.safeTransferFrom(from, to, id, amount, data);
     }
 
+
+    // These functions are intended for testnet use only and will be deleted before deployment to mainnet.
+
     function ownerCreateDrop(
         uint256 maxMint,
         uint256 price,
@@ -303,15 +306,36 @@ contract DYLI_new is ERC1155, Ownable {
         uint256 amount
     ) public onlyOwner {
         TokenData memory data = tokenData[tokenId];
-        require(!tokenDisabled[tokenId], "Token minting is disabled");
-
-        if (!data.isOE) {
-            require(totalMinted[tokenId] + amount <= data.maxMint, "Exceeds maximum quantity");
-        }
 
         _mint(recipient, tokenId, amount, "");
         totalMinted[tokenId] += amount;
         emit TokenMinted(tokenId, recipient, data.price, fee);
+    }
+
+    function ownerRedeem(
+        uint256 tokenId,
+        address recipient,
+        uint256 amount
+    ) public onlyOwner {
+        require(balanceOf(recipient, tokenId) >= amount, "Insufficient tokens to redeem");
+        _burn(recipient, tokenId, amount);
+        totalRedeemed[tokenId] += amount;
+        emit TokenRedeemed(tokenId, recipient);
+    }
+
+    function ownerRefund(
+        uint256 tokenId,
+        address recipient,
+        uint256 amount
+    ) public onlyOwner {
+        TokenData memory data = tokenData[tokenId];
+        require(balanceOf(recipient, tokenId) >= amount, "Insufficient tokens to refund");
+
+        _burn(recipient, tokenId, amount);
+        totalRefunded[tokenId] += amount;
+
+        require(usdc.transfer(recipient, data.price * amount), "Refund failed");
+        emit TokenRefunded(tokenId, recipient, data.price * amount);
     }
 
 }

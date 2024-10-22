@@ -2045,8 +2045,8 @@
       ]
     },
     "/Users/alexanderneedelman/Documents/DYLI-contracts/contracts/DYLI_new.sol": {
-      "lastModificationDate": 1729608506057,
-      "contentHash": "ee9fc5e82c76da7da6a37dd77fb47f9e",
+      "lastModificationDate": 1729612516066,
+      "contentHash": "f5c3288d85c3c6efc6e65db0ebf1dc20",
       "sourceName": "contracts/DYLI_new.sol",
       "solcConfig": {
         "version": "0.8.18",

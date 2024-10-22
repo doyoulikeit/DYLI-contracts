@@ -38,8 +38,8 @@ contract DYLI_new is ERC1155, Ownable {
 
     uint256 public currentTokenId = 0;
 
-    address feeRecipient = 0x2f2A13462f6d4aF64954ee84641D265932849b64;
-    address public signer = 0x2f2A13462f6d4aF64954ee84641D265932849b64;
+    address public feeRecipient;
+    address public signerAddress;
     uint256 public fee = 2000000;
     uint256 public createFee = 3000000;
 
@@ -68,16 +68,21 @@ contract DYLI_new is ERC1155, Ownable {
     }
 
     constructor(
-        string memory _uri
-    )
+        string memory _uri,
+        address _signerAddress,
+        address _feeRecipient
+    ) 
         ERC1155(_uri)
-    {}
+    {
+        signerAddress = _signerAddress;
+        feeRecipient = _feeRecipient;
+    }
 
     function verify(
         bytes32 hash,
         bytes memory signature
     ) internal view returns (bool) {
-        return ECDSA.recover(hash, signature) == signer;
+        return ECDSA.recover(hash, signature) == signerAddress;
     }
 
     function name() external pure returns (string memory) {
@@ -96,6 +101,10 @@ contract DYLI_new is ERC1155, Ownable {
         feeRecipient = _newFeeRecipient;
     }
 
+    function setSignerAddress(address _signerAddress) public onlyAdmin {
+        signerAddress = _signerAddress;
+    }
+
     function setUsdc(address _usdc) public onlyAdmin {
         usdc = IERC20(_usdc);
     }
@@ -106,10 +115,6 @@ contract DYLI_new is ERC1155, Ownable {
 
     function setCreateFee(uint256 _newCreateFee) public onlyAdmin {
         createFee = _newCreateFee;
-    }
-
-    function setSigner(address _newSigner) public onlyAdmin {
-        signer = _newSigner;
     }
 
     function createDrop(

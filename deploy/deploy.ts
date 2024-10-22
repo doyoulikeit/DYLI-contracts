@@ -1,4 +1,4 @@
-import { createWalletClient, http, parseEther, encodeFunctionData } from 'viem';
+import { createWalletClient, http, parseUnits, encodeFunctionData } from 'viem';
 import { eip712WalletActions } from 'viem/zksync';
 import { privateKeyToAccount } from 'viem/accounts';
 import { abstractTestnet } from 'viem/chains';
@@ -118,14 +118,15 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   const artifact = await deployer.loadArtifact('DYLI_new');
   const uri = 'https://www.dyli.io/api/metadata/';
-  const tokenContract = await deployer.deploy(artifact, [uri]);
+  const admin = "0x2f2A13462f6d4aF64954ee84641D265932849b64"
+  const tokenContract = await deployer.deploy(artifact, [uri, admin, admin]);
   const contractAddress = await tokenContract.getAddress();
   console.log(`${artifact.contractName} was deployed to ${contractAddress}`);
 
   try {
     await hre.run("verify:verify", {
       address: contractAddress,
-      constructorArguments: [uri],
+      constructorArguments: [uri, admin, admin],
     });
     console.log(`Contract verified at ${contractAddress}`);
   } catch (error) {
@@ -166,7 +167,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
       await sendWithRetry(
         walletClient,
         'ownerCreateDrop',
-        [1, parseEther('0.01'), false, Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 86400, 1],
+        [1, 10000, false, Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) + 86400, 1],
         account,
         contractAddress,
         abi
@@ -179,7 +180,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
         'ownerCreateDrop',
         [
           supply,
-          parseEther(product.price.toString()),
+          parseUnits(product.price.toString(), 6),
           product.dropType === 'OE',
           startTimestamp,
           Math.floor(new Date(product.endDate).getTime() / 1000),

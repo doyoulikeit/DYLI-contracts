@@ -334,7 +334,6 @@ contract DYLI_new is ERC1155, Ownable {
         _burn(recipient, tokenId, amount);
         totalRefunded[tokenId] += amount;
 
-        require(usdc.transfer(recipient, data.price * amount), "Refund failed");
         emit TokenRefunded(tokenId, recipient, data.price * amount);
     }
 

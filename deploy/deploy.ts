@@ -145,7 +145,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const { data: products, error } = await supabase
     .from('products')
     .select('tokenid, price, supply, minimum, created_at, startDate, endDate, dropType')
-    .limit(1)
     .order('tokenid', { ascending: true });
 
   if (error) {

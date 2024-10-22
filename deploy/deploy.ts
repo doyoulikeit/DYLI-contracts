@@ -202,7 +202,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
   const { data: productsDistinct, error: productsError } = await supabase
     .from('products')
-    .select('tokenid')
+    .select('tokenid, id')
 
   if (productsError) {
     console.error('Error fetching tokenIds:', productsError);
@@ -228,6 +228,8 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
       const balance = balances[0];
 
+      const product = productsDistinct.find(p => p.tokenid === tokenId);
+
       if (balance > 0) {
         try {
           const mintTx = await sendWithRetry(
@@ -244,81 +246,86 @@ export default async function (hre: HardhatRuntimeEnvironment) {
         }
       }
 
-      const { data: redeemedOrders, error: redeemedError } = await supabase
-        .from('orders')
-        .select('id, productId, redeemed')
-        .eq('redeemed', true)
-        .eq('user', user.privyId);
+      if (product) {
 
-      const { data: refundedOrders, error: refundedError } = await supabase
-        .from('orders')
-        .select('id, productId, refunded')
-        .eq('refunded', true)
-        .eq('user', user.privyId);
+        const { data: redeemedOrders, error: redeemedError } = await supabase
+          .from('orders')
+          .select('id, productId, redeemed')
+          .eq('redeemed', true)
+          .eq('user', user.privyId)
+          .eq('productId', product.id);
 
-      if (redeemedError || refundedError) {
-        console.error('Error fetching orders:', redeemedError || refundedError);
-        continue;
-      }
+        const { data: refundedOrders, error: refundedError } = await supabase
+          .from('orders')
+          .select('id, productId, refunded')
+          .eq('refunded', true)
+          .eq('user', user.privyId)
+          .eq('productId', product.id);
 
-      let totalToMint = 0;
-      let totalToRedeem = 0;
-      let totalToRefund = 0;
-
-      for (const order of redeemedOrders) {
-        totalToRedeem++;
-      }
-
-      for (const order of refundedOrders) {
-        totalToRefund++;
-      }
-
-      totalToMint = totalToRedeem + totalToRefund;
-
-      if (totalToMint > 0) {
-        try {
-          const mintTx = await sendWithRetry(
-            walletClient,
-            'ownerMintToken',
-            [tokenId, user.wallet, totalToMint],
-            account,
-            contractAddress,
-            abi
-          );
-          console.log(`Minted ${totalToMint} tokens for user ${user.id}: ${mintTx}`);
-        } catch (error) {
-          console.error(`Error minting tokens for user ${user.id}:`, error);
+        if (redeemedError || refundedError) {
+          console.error('Error fetching orders:', redeemedError || refundedError);
+          continue;
         }
 
-        if (totalToRedeem > 0) {
+        let totalToMint = 0;
+        let totalToRedeem = 0;
+        let totalToRefund = 0;
+
+        for (const order of redeemedOrders) {
+          totalToRedeem++;
+        }
+
+        for (const order of refundedOrders) {
+          totalToRefund++;
+        }
+
+        totalToMint = totalToRedeem + totalToRefund;
+
+        if (totalToMint > 0) {
           try {
-            const redeemTx = await sendWithRetry(
+            const mintTx = await sendWithRetry(
               walletClient,
-              'ownerRedeem',
-              [tokenId, user.wallet, totalToRedeem],
+              'ownerMintToken',
+              [tokenId, user.wallet, totalToMint],
               account,
               contractAddress,
               abi
             );
-            console.log(`Redeemed ${totalToRedeem} tokens for user ${user.id}: ${redeemTx}`);
+            console.log(`Minted ${totalToMint} tokens for user ${user.id}: ${mintTx}`);
           } catch (error) {
-            console.error(`Error redeeming tokens for user ${user.id}:`, error);
+            console.error(`Error minting tokens for user ${user.id}:`, error);
           }
-        }
 
-        if (totalToRefund > 0) {
-          try {
-            const refundTx = await sendWithRetry(
-              walletClient,
-              'ownerRefund',
-              [tokenId, user.wallet, totalToRefund],
-              account,
-              contractAddress,
-              abi
-            );
-            console.log(`Refunded ${totalToRefund} tokens for user ${user.id}: ${refundTx}`);
-          } catch (error) {
-            console.error(`Error refunding tokens for user ${user.id}:`, error);
+          if (totalToRedeem > 0) {
+            try {
+              const redeemTx = await sendWithRetry(
+                walletClient,
+                'ownerRedeem',
+                [tokenId, user.wallet, totalToRedeem],
+                account,
+                contractAddress,
+                abi
+              );
+              console.log(`Redeemed ${totalToRedeem} tokens for user ${user.id}: ${redeemTx}`);
+            } catch (error) {
+              console.error(`Error redeeming tokens for user ${user.id}:`, error);
+            }
+          }
+
+          if (totalToRefund > 0) {
+            try {
+              const refundTx = await sendWithRetry(
+                walletClient,
+                'ownerRefund',
+                [tokenId, user.wallet, totalToRefund],
+                account,
+                contractAddress,
+                abi
+              );
+              console.log(`Refunded ${totalToRefund} tokens for user ${user.id}: ${refundTx}`);
+            } catch (error) {
+              console.error(`Error refunding tokens for user ${user.id}:`, error);
+            }
           }
         }
       }

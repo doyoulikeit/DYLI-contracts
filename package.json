@@ -16,6 +16,10 @@
   },
   "dependencies": {
     "@limitbreak/creator-token-contracts": "^1.1.2",
-    "@openzeppelin/contracts": "^4.8.1"
+    "@openzeppelin/contracts": "^4.8.1",
+    "@supabase/supabase-js": "^2.45.6",
+    "dotenv": "^16.4.5",
+    "viem": "^2.21.32",
+    "web3": "^4.14.0"
   }
 }

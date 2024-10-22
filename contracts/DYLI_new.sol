@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract dyli_new is ERC1155, Ownable {
+contract DYLI_new is ERC1155, Ownable {
 
     IERC20 public usdc = IERC20(0x75Bf8F439d205B8eE0DE9d3622342eb05985859B);
 

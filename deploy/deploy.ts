@@ -8,7 +8,6 @@ import { Deployer } from '@matterlabs/hardhat-zksync';
 import { createClient } from '@supabase/supabase-js';
 import Web3 from 'web3';
 import dotenv from 'dotenv';
-import { contract } from 'web3/lib/commonjs/eth.exports';
 
 dotenv.config();
 
@@ -115,7 +114,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     .from('products')
     .select('tokenid, price, supply, minimum, created_at, startDate, endDate, dropType')
     .order('tokenid', { ascending: true })
-    .limit(5);
 
   if (error) {
     console.error('Error fetching products:', error);
@@ -173,7 +171,6 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const { data: productsDistinct, error: productsError } = await supabase
     .from('products')
     .select('tokenid')
-    .limit(5)
 
   if (productsError) {
     console.error('Error fetching tokenIds:', productsError);
@@ -191,50 +188,61 @@ export default async function (hre: HardhatRuntimeEnvironment) {
     return;
   }
 
+  const BATCH_SIZE = 20;
+
   for (const user of users) {
-    const balances = await getBalances(user.wallet, tokenIds);
-
-    console.log(`Balances for user ${user.id}:`, balances);
-
-    for (let i = 0; i < tokenIds.length; i++) {
-      const tokenId = tokenIds[i];
-      const balance = balances[i];
-
-      if (balance > 0) {
-        try {
-          const mintTx = await sendWithRetry(
-            walletClient,
-            'ownerMintToken',
-            [tokenId, user.wallet, balance],
-            account,
-            contractAddress,
-            abi
-          );
-          console.log(`Minted ${balance} tokens of tokenId ${tokenId} for user ${user.id}: ${mintTx}`);
-        } catch (error) {
-          console.error(`Error minting tokens for user ${user.id} (tokenId ${tokenId}):`, error);
+    for (let batchStart = 0; batchStart < tokenIds.length; batchStart += BATCH_SIZE) {
+      const batchTokenIds = tokenIds.slice(batchStart, batchStart + BATCH_SIZE);
+      const balances = await getBalances(user.wallet, batchTokenIds);
+  
+      for (let i = 0; i < batchTokenIds.length; i++) {
+        const tokenId = batchTokenIds[i];
+        const balance = balances[i];
+  
+        if (balance > 0) {
+          try {
+            const mintTx = await sendWithRetry(
+              walletClient,
+              'ownerMintToken',
+              [tokenId, user.wallet, balance],
+              account,
+              contractAddress,
+              abi
+            );
+            console.log(`Minted ${balance} tokens of tokenId ${tokenId} for user ${user.id}: ${mintTx}`);
+          } catch (error) {
+            console.error(`Error minting tokens for user ${user.id} (tokenId ${tokenId}):`, error);
+          }
         }
       }
     }
   }
+
   console.log('All tokens minted.');
 }
 
 async function getBalances(walletAddress: string, tokenIds: number[]): Promise<number[]> {
-  try {
-    const accounts = new Array(tokenIds.length).fill(walletAddress);
+  const BATCH_SIZE = 20;
+  const balances: number[] = [];
 
-    const contract = new web3.eth.Contract(balanceOfBatchAbi, contract1155);
+  for (let batchStart = 0; batchStart < tokenIds.length; batchStart += BATCH_SIZE) {
+    const batchTokenIds = tokenIds.slice(batchStart, batchStart + BATCH_SIZE);
+    const accounts = new Array(batchTokenIds.length).fill(walletAddress);
 
-    const balances = await contract.methods.balanceOfBatch(accounts, tokenIds).call();
+    try {
+      const contract = new web3.eth.Contract(balanceOfBatchAbi, contract1155);
+      const batchBalances = await contract.methods.balanceOfBatch(accounts, batchTokenIds).call();
 
-    if (!Array.isArray(balances)) {
-      throw new Error('Unexpected response format');
+      if (!Array.isArray(batchBalances)) {
+        throw new Error('Unexpected response format');
+      }
+
+      balances.push(...batchBalances.map((balance: any) => parseInt(balance, 10)));
+    } catch (error) {
+      console.error(`Error fetching balances for wallet ${walletAddress} in batch ${batchStart}:`, error);
+      return [];
     }
-
-    return balances.map((balance: any) => parseInt(balance, 10));
-  } catch (error) {
-    console.error(`Error fetching balances for wallet ${walletAddress}:`, error);
-    return [];
   }
+
+  return balances;
 }

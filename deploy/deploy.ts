@@ -269,34 +269,14 @@ export default async function (hre: HardhatRuntimeEnvironment) {
         let totalToMint = 0;
         let totalToRedeem = 0;
         let totalToRefund = 0;
-        let pId;
 
         for (const order of redeemedOrders) {
-          const { productId } = order;
-          pId = productId;
           totalToRedeem++;
         }
 
         for (const order of refundedOrders) {
-          const { productId } = order;
-          pId = productId;
           totalToRefund++;
         }
-
-        let tokenIdOfProduct;
-
-        const { data: productDetails, error: detailsError } = await supabase
-        .from('products')
-        .select('tokenid')
-        .eq('id', pId)
-        .single();
-
-        if (detailsError) {
-          console.error('Error tokenid:', detailsError);
-          continue;
-        }
-
-        tokenIdOfProduct = productDetails?.tokenid;
 
         totalToMint = totalToRedeem + totalToRefund;
 
@@ -305,7 +285,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
             const mintTx = await sendWithRetry(
               walletClient,
               'ownerMintToken',
-              [tokenIdOfProduct, user.wallet, totalToMint],
+              [tokenId, user.wallet, totalToMint],
               account,
               contractAddress,
               abi
@@ -317,13 +297,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 
           if (totalToRedeem > 0) {
 
-            console.log(totalToRedeem)
-
             try {
               const redeemTx = await sendWithRetry(
                 walletClient,
                 'ownerRedeem',
-                [tokenIdOfProduct, user.wallet, totalToRedeem],
+                [tokenId, user.wallet, totalToRedeem],
                 account,
                 contractAddress,
                 abi
@@ -342,7 +320,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
               const refundTx = await sendWithRetry(
                 walletClient,
                 'ownerRefund',
-                [tokenIdOfProduct, user.wallet, totalToRefund],
+                [tokenId, user.wallet, totalToRefund],
                 account,
                 contractAddress,
                 abi

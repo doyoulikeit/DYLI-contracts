@@ -2045,8 +2045,8 @@
       ]
     },
     "/Users/alexanderneedelman/Documents/DYLI-contracts/contracts/DYLI_new.sol": {
-      "lastModificationDate": 1729612516066,
-      "contentHash": "f5c3288d85c3c6efc6e65db0ebf1dc20",
+      "lastModificationDate": 1729970925749,
+      "contentHash": "9f57c1053427694c7eb4fa06be15984e",
       "sourceName": "contracts/DYLI_new.sol",
       "solcConfig": {
         "version": "0.8.18",
@@ -2093,11 +2093,13 @@
         }
       },
       "imports": [
-        "@openzeppelin/contracts/token/ERC1155/ERC1155.sol",
+        "@openzeppelin/contracts/access/AccessControl.sol",
         "@openzeppelin/contracts/token/ERC20/IERC20.sol",
         "@openzeppelin/contracts/access/Ownable.sol",
         "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
-        "@openzeppelin/contracts/utils/Strings.sol"
+        "@openzeppelin/contracts/utils/Strings.sol",
+        "@limitbreak/creator-token-contracts/contracts/erc1155c/ERC1155C.sol",
+        "@limitbreak/creator-token-contracts/contracts/programmable-royalties/BasicRoyalties.sol"
       ],
       "versionPragmas": [
         "^0.8.0"

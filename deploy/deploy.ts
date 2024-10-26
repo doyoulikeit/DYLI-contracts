@@ -108,7 +108,7 @@ const balanceOfBatchAbi = [
   }
 ];
 
-const contract1155 = '0xEd98897E58E61fFB8a4Cf802C6FCc03977975461';
+const contract1155 = '0x9cBf38e9Dc91cfeb5eD85e34aDdB08831916ce3a';
 
 export default async function (hre: HardhatRuntimeEnvironment) {
   let privateKey = process.env.PRIVATE_KEY as `0x${string}`;
@@ -117,16 +117,18 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployer = new Deployer(hre, deployerWallet);
 
   const artifact = await deployer.loadArtifact('DYLI_new');
-  const uri = 'https://www.dyli.io/api/metadata/';
+  const uri = 'https://www.dyli.io/api/metadata';
+  const usdc = "0x75Bf8F439d205B8eE0DE9d3622342eb05985859B"
   const admin = "0x2f2A13462f6d4aF64954ee84641D265932849b64"
-  const tokenContract = await deployer.deploy(artifact, [uri, admin, admin]);
+  const royaltyFeeNumerator = 500;
+  const tokenContract = await deployer.deploy(artifact, [uri, usdc, admin, admin, royaltyFeeNumerator]);
   const contractAddress = await tokenContract.getAddress();
   console.log(`${artifact.contractName} was deployed to ${contractAddress}`);
 
   try {
     await hre.run("verify:verify", {
       address: contractAddress,
-      constructorArguments: [uri, admin, admin],
+      constructorArguments: [uri, usdc, admin, admin, royaltyFeeNumerator],
     });
     console.log(`Contract verified at ${contractAddress}`);
   } catch (error) {

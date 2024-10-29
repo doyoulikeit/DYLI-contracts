@@ -18,6 +18,8 @@ contract DYLIMarketplace is Ownable, ReentrancyGuard {
     IERC20 public paymentToken;
 
     struct ListingOrBid {
+        address seller;
+        address buyer;
         uint64 quantity;
         uint128 pricePerItem;
         uint64 expirationTime;
@@ -105,7 +107,9 @@ contract DYLIMarketplace is Ownable, ReentrancyGuard {
         require(erc1155.balanceOf(msg.sender, tokenId) >= amount, "Does not own enough tokens to list");
         require(erc1155.isApprovedForAll(msg.sender, address(this)), "Has not approved marketplace to transfer tokens");
 
-        listings[msg.sender][tokenId] = ListingOrBid({
+    listings[msg.sender][tokenId] = ListingOrBid({
+            seller: msg.sender,
+            buyer: address(0),
             quantity: amount,
             pricePerItem: price,
             expirationTime: expiration
@@ -144,16 +148,16 @@ contract DYLIMarketplace is Ownable, ReentrancyGuard {
         uint256 royalty = tokenRoyalties[tokenId] > 0 ? tokenRoyalties[tokenId] : royaltyPercentage;
         uint256 royaltyAmount = (totalPrice * royalty) / 100;
 
-        require(usdc.transferFrom(msg.sender, seller, totalPrice - royaltyAmount), "Payment failed");
+        require(usdc.transferFrom(msg.sender, listing.seller, totalPrice - royaltyAmount), "Payment failed");
         require(usdc.transferFrom(msg.sender, royaltyRecipient, royaltyAmount), "Royalty payment failed");
         require(usdc.transferFrom(msg.sender, royaltyRecipient, fixedFee), "Flat fee payment failed");
 
-        if(listing.quantity == amount)
+        if (listing.quantity == amount)
             listing.expirationTime = 0;
 
-        erc1155.safeTransferFrom(seller, msg.sender, tokenId, amount, "");
+        erc1155.safeTransferFrom(listing.seller, msg.sender, tokenId, amount, "");
 
-        emit ListingBought(tokenId, msg.sender, pricePerItem, amount, seller);
+        emit ListingBought(tokenId, msg.sender, pricePerItem, amount, listing.seller);
     }
 
     function createBid(uint256 tokenId, uint64 amount, uint64 expiration, uint128 pricePerItem) public nonReentrant {
@@ -162,6 +166,8 @@ contract DYLIMarketplace is Ownable, ReentrancyGuard {
         require(amount > 0, "Amount must be greater than 0");
 
         tokenBids[msg.sender][tokenId] = ListingOrBid({
+            seller: address(0),
+            buyer: msg.sender,
             quantity: amount,
             pricePerItem: pricePerItem,
             expirationTime: expiration
@@ -199,15 +205,15 @@ contract DYLIMarketplace is Ownable, ReentrancyGuard {
 
         bid.expirationTime = 0;
 
-
         require(usdc.transfer(msg.sender, totalPrice - royaltyAmount), "Payment to token owner failed");
         require(usdc.transfer(royaltyRecipient, royaltyAmount), "Royalty payment failed");
         require(usdc.transfer(royaltyRecipient, fixedFee), "Flat fee payment failed");
 
-        erc1155.safeTransferFrom(msg.sender, buyer, tokenId, bid.quantity, "");
+        erc1155.safeTransferFrom(msg.sender, bid.buyer, tokenId, bid.quantity, "");
 
-        emit BidAccepted(tokenId, msg.sender, buyer, bid.quantity);
+        emit BidAccepted(tokenId, msg.sender, bid.buyer, bid.quantity);
     }
+
 
     function setRoyaltyRecipient(address newRecipient) public onlyOwner {
         royaltyRecipient = newRecipient;

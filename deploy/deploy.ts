@@ -116,7 +116,7 @@ export default async function (hre: HardhatRuntimeEnvironment) {
   const deployerWallet = new Wallet(privateKey);
   const deployer = new Deployer(hre, deployerWallet);
 
-  const artifact = await deployer.loadArtifact('DYLI_new');
+  const artifact = await deployer.loadArtifact('DYLI');
   const uri = 'https://www.dyli.io/api/metadata';
   const usdc = "0x75Bf8F439d205B8eE0DE9d3622342eb05985859B"
   const admin = "0x2f2A13462f6d4aF64954ee84641D265932849b64"
@@ -340,8 +340,11 @@ export default async function (hre: HardhatRuntimeEnvironment) {
 async function getBalances(walletAddress: string, tokenIds: number[]): Promise<number[]> {
   const balances: number[] = [];
 
+
   for (const tokenId of tokenIds) {
     try {
+
+
       const contract = new web3.eth.Contract(balanceOfBatchAbi, contract1155);
       const batchBalances = await contract.methods.balanceOfBatch([walletAddress], [tokenId]).call();
 

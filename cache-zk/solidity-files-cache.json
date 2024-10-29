@@ -112,8 +112,8 @@
       "artifacts": []
     },
     "/Users/alexanderneedelman/Documents/DYLI-contracts/contracts/DYLIMarketplace.sol": {
-      "lastModificationDate": 1730224986911,
-      "contentHash": "f6145aa7055e00f0117a6d671e60d8cb",
+      "lastModificationDate": 1730227463910,
+      "contentHash": "9aa1c1b1a27c0fe7e9ff0784c4f71aef",
       "sourceName": "contracts/DYLIMarketplace.sol",
       "solcConfig": {
         "version": "0.8.18",

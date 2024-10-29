@@ -205,15 +205,14 @@ contract DYLIMarketplace is Ownable, ReentrancyGuard {
 
         bid.expirationTime = 0;
 
-        require(usdc.transfer(msg.sender, totalPrice - royaltyAmount), "Payment to token owner failed");
-        require(usdc.transfer(royaltyRecipient, royaltyAmount), "Royalty payment failed");
-        require(usdc.transfer(royaltyRecipient, fixedFee), "Flat fee payment failed");
+        require(usdc.transferFrom(bid.buyer, msg.sender, totalPrice - royaltyAmount), "Payment to token owner failed");
+        require(usdc.transferFrom(bid.buyer, royaltyRecipient, royaltyAmount), "Royalty payment failed");
+        require(usdc.transferFrom(bid.buyer, royaltyRecipient, fixedFee), "Flat fee payment failed");
 
         erc1155.safeTransferFrom(msg.sender, bid.buyer, tokenId, bid.quantity, "");
 
         emit BidAccepted(tokenId, msg.sender, bid.buyer, bid.quantity);
     }
-
 
     function setRoyaltyRecipient(address newRecipient) public onlyOwner {
         royaltyRecipient = newRecipient;
